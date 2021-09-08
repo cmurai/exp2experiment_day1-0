@@ -102,6 +102,13 @@
         };
         timeline.push(test_procedure);
 
+        var end_experiment = {
+            type: 'html-button-response',
+            stimulus: '実験にご参加いただきありがとうございました！<br>下のボタンを押して実験を終了してください<br>',
+            choices: ['終了する']
+        };
+        timeline.push(end_experiment);
+
         jsPsych.init({
             timeline: timeline,
             // show_progress_bar: true,
