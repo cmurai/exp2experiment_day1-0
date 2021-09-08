@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Day 1</title>
+        <script src="jspsych-6.3.1/jspsych.js"></script>
+        <script src="jspsych-6.3.1/plugins/jspsych-html-keyboard-response.js"></script>
+        <script src="jspsych-6.3.1/plugins/jspsych-html-button-response.js"></script>
+        <script src="jspsych-6.3.1/plugins/jspsych-survey-html-form.js"></script>
+        <script src="jspsych-6.3.1/plugins/jspsych-survey-text.js"></script>
+        <script src="jspsych-6.3.1/plugins/jspsych-instructions.js"></script>
+        <script src="jspsych-6.3.1/plugins/jspsych-preload.js"></script>
+        <link rel="stylesheet" href="jspsych-6.3.1/css/jspsych.css" type="text/css">
+        <link rel="stylesheet" href="stylesheet.css">
+        <script src="rnorm.js"></script>
+        <script src="rewards.js"></script>
+        <script src="determines.js"></script>
+
+        <!-- jsPsychSheet library -->
+        <script src="https://brain2ai.github.io/jsPsychSheet/jspsychsheet.js"></script>
+        <link rel="stylesheet" href="https://brain2ai.github.io/jsPsychSheet/jspsychsheet.css">
+
+        <!-- jQuery -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    </head>
+    <meta charset="utf-8"/>
+    <body></body>
+    <script>
+        var timeline = [];
+
+        var N = 30;  // total trials
+        var n = 0;   // current trial
+
+        var rest_sec = 10;   // rest time
+        var sec = rest_sec;  // countdown for rest
+
+        var stage1 = {
+            type: 'html-keyboard-response',
+            stimulus: function() {
+                n = n + 1;  // increment trial count
+                return `${n}`;
+            },
+            choices: ['f','j'],
+            trial_duration: 1500,
+            data: {
+                stage: 1,
+                page_type: 'trial'
+            },
+            on_finish: function(data) {data.trial = n;}
+        };
+        
+        var stage2 = {
+            type: 'html-keyboard-response',
+            stimulus: 'def',
+            choices: ['f','j'],
+            trial_duration: 2000,
+            data: {
+                stage: 2,
+                page_type: 'trial'
+            },
+            on_finish: function(data) {
+                sec = rest_sec;
+                data.trial = n;
+            }
+        };
+
+        var page_rest = {
+            type: 'html-keyboard-response',
+            stimulus: '',
+            prompt: function() {
+                if ((n === Math.floor(N/3) || n === Math.floor(N*2/3)) && sec >= 0) {
+                    return `休憩時間です。<br>実験再開まで${sec}秒`;
+                } return '';
+            },
+            trial_duration: function() {
+                if ((n === Math.floor(N/3) || n === Math.floor(N*2/3)) && sec >= 0) {
+                    return 1000;
+                } return 0;
+            },
+            choices: jsPsych.NO_KEYS,
+            data: {
+                page_type: 'rest'
+            },
+            on_finish: function(data) {
+                sec = sec - 1;  // decrement seconds left
+            }
+        };
+
+        var stage_rest = {
+            timeline: [page_rest],
+            sample: {
+                type: 'with-replacement',
+                size: rest_sec
+            }
+        };
+
+        var test_procedure = {
+            timeline: [stage1, stage2, stage_rest],
+            sample: {
+                type: 'with-replacement',
+                size: N
+            }
+        };
+        timeline.push(test_procedure);
+
+        jsPsych.init({
+            timeline: timeline,
+            // show_progress_bar: true,
+            on_finish: function () {
+                url = 'https://script.google.com/macros/s/AKfycby5jyz9s6V9TRbRx1jJHUs_b2ab6v3cZbR6CxYD8toY0EGy2HWshxbyTxqXrbaCHbyhqw/exec';
+                jsPsychSheet.uploadData(url, jsPsych.data.get().filter({page_type: 'trial'}).csv())
+            }
+        });
+    </script>
+</html>
